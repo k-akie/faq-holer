@@ -1,0 +1,4 @@
+Flask>1
+slack_bolt
+google-cloud-firestore
+google-cloud-language
