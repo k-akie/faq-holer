@@ -11,19 +11,25 @@ FAQとして質問文と回答文の凡例を登録しておき、質問に近�
 ## 処理フロー
 ```mermaid
 flowchart LR
-    SlackBot -- shortcut:\nadd_faq_modal --> add_faq_modal -- submit --> add_faq_modal_view_submission -- add --> answer
-    SlackBot -- command:\n/faq --> search_faq -- get --> question
+    save_faq --> LanguageAPI
+    search_faq --> LanguageAPI
+    SlackBot -- shortcut:\nadd_faq_modal --> add_faq_modal -- submit --> save_faq -- add --> answer
+    SlackBot -- command:\n/faq_add --> save_faq
+    SlackBot -- command:\n/faq --> search_faq -- get --> content
     search_faq -- get --> answer
     search_faq -- add --> history
-    subgraph Firestore
-        answer
-        content
-        history
-    end
-    subgraph Cloud Functions
-        add_faq_modal
-        add_faq_modal_view_submission
-        search_faq
+    subgraph GCP
+      LanguageAPI
+      subgraph Firestore
+          answer
+          content
+          history
+      end
+      subgraph Cloud Functions
+          add_faq_modal
+          save_faq
+          search_faq
+      end
     end
 ```
 
