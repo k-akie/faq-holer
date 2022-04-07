@@ -1,6 +1,7 @@
 import logging
+from typing import Optional
 
-from slack_bolt import App, Ack
+from slack_bolt import App, Ack, Respond
 from slack_bolt.adapter.flask import SlackRequestHandler
 from slack_sdk import WebClient
 
@@ -17,7 +18,7 @@ handler = SlackRequestHandler(app)
 
 # https://slack.dev/bolt-python/ja-jp/concepts#opening-modals
 @app.shortcut("add_faq_modal")
-def add_faq_modal(ack, body, client):
+def add_faq_modal(ack: Ack, body: dict, client: WebClient):
     ack()
     client.views_open(
         trigger_id=body["trigger_id"],
@@ -63,19 +64,39 @@ def add_faq_modal_view_submission(ack: Ack, body: dict, client: WebClient, logge
     question = input_values['input_question']['action_input_question']['value']
     answer = input_values['input_answer']['action_input_answer']['value']
 
+    channel = body["user"]["id"]
+    q_analyzed, a_analyzed = save_faq(answer, question)
+    client.chat_postMessage(
+        channel=channel,
+        text=f"FAQを登録しました :ok_woman:"
+             f"```\nQ. {q_analyzed.text}\nA. {a_analyzed.text}```"
+    )
+
+
+@app.command("/faq_add")
+def faq_add(ack: Ack, body: dict, client: WebClient, respond: Respond, command: Optional[dict]):
+    ack()
+
+    if command is not None and 'text' in command:
+        params: [str] = str(command['text']).split()
+        print(params)
+        if len(params) == 2:
+            q_analyzed, a_analyzed = save_faq(params[0], params[1])
+            respond(
+                f"FAQを登録しました :ok_woman:"
+                f"```\nQ. {q_analyzed.text}\nA. {a_analyzed.text}```"
+            )
+            return
+
+    add_faq_modal(ack, body, client)
+
+
+def save_faq(answer, question):
     q_analyzed = analyze_entities(question)
     a_analyzed = analyze_entities(answer)
 
-    client.chat_postMessage(
-        channel=body["user"]["id"],
-        text=f"You submitted"
-             f"\nQ. {q_analyzed.text}"
-             f"\nA. {a_analyzed.text}"
-             f"\n<analyzed keywords>"
-             f"\n- question: {q_analyzed}"
-             f"\n- answer: {a_analyzed}"
-    )
     add_faq(q_analyzed, a_analyzed)
+    return q_analyzed, a_analyzed
 
 
 @app.command("/faq")
