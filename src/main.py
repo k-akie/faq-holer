@@ -91,7 +91,7 @@ def faq_add(ack: Ack, body: dict, client: WebClient, respond: Respond, command: 
     add_faq_modal(ack, body, client)
 
 
-def save_faq(answer, question):
+def save_faq(question, answer):
     q_analyzed = analyze_entities(question)
     a_analyzed = analyze_entities(answer)
 
@@ -107,7 +107,10 @@ def search_faq(ack, respond, command):
     analyzed = analyze_entities(question)
 
     q_text, a_text = search(analyzed)
-    respond(f"{question}\n\nQ. {q_text}\nA. {a_text}")
+    if q_text:
+        respond(f"「{question}」という質問に近いFAQを紹介します\n```Q. {q_text}\nA. {a_text}```")
+    else:
+        respond(f"「{question}」という質問に近いFAQがありませんでした:bow:\nキーワードを変えて質問してみてください")
 
 
 # Cloud Function
