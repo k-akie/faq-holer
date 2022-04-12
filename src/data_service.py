@@ -23,7 +23,7 @@ def add_faq(q_analyzed: Analyzed, a_analyzed: Analyzed):
     doc, ref = doc_ref
     for entity in q_analyzed.entities:
         db.collection('content').document(entity.name).set({
-            'faq': [{'salience': entity.salience, 'faq_id': ref.id}]
+            ref.id: entity.salience
         }, merge=True)
 
 
@@ -35,7 +35,9 @@ def search(analyzed: Analyzed) -> (str, str):
     content = db.collection('content').document(keyword).get()
 
     if content.exists:
-        answer_id: str = content.get('faq')[0].get('faq_id')
+        # 関連度が最も高いFAQのIDを取得
+        sorted_content = sorted(content.to_dict().items(), key=lambda item: item[1], reverse=True)
+        answer_id: str = sorted_content[0][0]
 
         # 履歴の登録
         db.collection('history').document(questioned).set({
